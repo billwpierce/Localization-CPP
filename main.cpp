@@ -21,19 +21,35 @@ struct Pose {
     double yaw;
 };
 
+struct Segment {
+    Point a;
+    Point b;
+};
+
 // TODO: Add the other four sections
-const Point rocket_right_near = {213.57, 17.93};
-const Point rocket_right_center = {228.28, 27.44};
-const Point rocket_right_far = {242.99, 17.93};
-const Point ship_right_near = {259.8, 133.13};
-const Point ship_right_center = {281.55, 133.13};
-const Point ship_right_far = {-303.3, 133.13};
-const Point ship_right_front = {220.25, 151.13};
-const Point player_station_right = {0, 25.72};
-const vector<Point> all_targets = {rocket_right_near, rocket_right_center,
-                                   rocket_right_far,  ship_right_near,
-                                   ship_right_center, ship_right_far,
-                                   ship_right_front,  player_station_right};
+const Point tar_right_rocket_near = {213.57, 17.93};
+const Point tar_right_rocket_center = {228.28, 27.44};
+const Point tar_right_rocket_far = {242.99, 17.93};
+const Point tar_right_ship_near = {259.8, 133.13};
+const Point tar_right_ship_center = {281.55, 133.13};
+const Point tar_right_ship_far = {-303.3, 133.13};
+const Point tar_right_ship_front = {220.25, 151.13};
+const Point tar_right_playerstation = {0, 25.72};
+const vector<Point> all_targets = {
+    tar_right_rocket_near, tar_right_rocket_center, tar_right_rocket_far,
+    tar_right_ship_near,   tar_right_ship_center,   tar_right_ship_far,
+    tar_right_ship_front,  tar_right_playerstation};
+const Segment seg_right_ship_side = {{220.25, 133.13}, {323.81, 133.13}};
+const Segment seg_right_ship_near = {{220.25, 133.13}, {220.25, 188.13}};
+const Segment seg_right_rocket_center = {{218.56, 27.44}, {238.00, 27.44}};
+const Segment seg_right_rocket_near = {{218.56, 27.44}, {207.75, 7.82}};
+const Segment seg_right_rocket_backing = {{207.75, 7.82}, {248.7, 7.82}};
+const Segment seg_right_rocket_far = {{248.7, 7.82}, {238.00, 27.44}};
+const vector<Segment> segment_map = {
+    seg_right_ship_side,   seg_right_ship_near,      seg_right_rocket_center,
+    seg_right_rocket_near, seg_right_rocket_backing, seg_right_rocket_far};
+
+vector<Point> expected_targets(Pose pose) {}
 
 double RatePrediction(vector<Point> field, Pose prediction) {
     // TODO: Accuracy based on comparing the sorted shortest lengths
