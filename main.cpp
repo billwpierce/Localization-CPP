@@ -1,3 +1,4 @@
+#include <math.h>
 #include <iostream>
 #include <numeric>
 #include <tuple>
@@ -49,10 +50,54 @@ const vector<Segment> segment_map = {
     seg_right_ship_side,   seg_right_ship_near,      seg_right_rocket_center,
     seg_right_rocket_near, seg_right_rocket_backing, seg_right_rocket_far};
 
-vector<Point> expected_targets(Pose pose) {}
+bool intersect(Segment line1, Segment line2) {
+    // Segment Detection based on:
+    // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
+    double slope1 = (line1.a.y - line1.b.y) / (line1.a.x - line1.b.x);
+    double slope2 = (line2.a.y - line2.b.y) / (line2.a.x - line2.b.x);
+    double c1 = line1.a.y - slope1 * line1.a.x;
+    double c2 = line2.a.y - slope2 * line2.a.x;
+    if (slope1 == slope2) {
+        return false;
+    }
+    double p = (c2 - c1) / (slope1 - slope2);
+    if (p < max(min(line1.a.x, line1.b.x), min(line2.a.x, line2.b.x))) {
+        return false;
+    }
+    if (p > min(min(line1.a.x, line1.b.x), min(line2.a.x, line2.b.x))) {
+        return false;
+    }
+    return true;
+}
 
-double RatePrediction(vector<Point> field, Pose prediction) {
-    // TODO: Accuracy based on comparing the sorted shortest lengths
+vector<Point> expected_targets(Pose pose) {
+    vector<Point> visible_targets;
+    for (int i = 0; i < all_targets.size(); i++) {
+        bool observable = true;
+        Segment sight = {pose.pos, all_targets[i]};
+        for (int j = 0; j < segment_map.size(); j++) {
+            if (intersect(sight, segment_map[i])) {
+                observable = false;
+                break;
+            }
+        }
+        if (observable) {
+            visible_targets.push_back(all_targets[i]);
+        }
+    }
+    vector<Point> expected_observations;
+    for (int i = 0; i < visible_targets.size(); i++) {
+        Point target = visible_targets[i];
+        Point rel = {target.x - pose.pos.x, target.y - pose.pos.y};
+        double x_prime = rel.x * cos(-pose.yaw) - rel.y * sin(-pose.yaw);
+        double y_prime = rel.x * sin(-pose.yaw) + rel.y * cos(-pose.yaw);
+        expected_observations.push_back({x_prime, y_prime});
+    }
+    return expected_observations;
+}
+
+double RatePrediction(vector<Point> measured, Pose assessed_position) {
+    vector<Point> expected = expected_targets(assessed_position);
 }
 
 Pose NewPoseWithNoise(Pose previous) {  // TODO: Implement dx to more
@@ -61,6 +106,7 @@ Pose NewPoseWithNoise(Pose previous) {  // TODO: Implement dx to more
     new_pose.pos.x = previous.pos.x + (kZrand * kVelocityNoise);
     new_pose.pos.y = previous.pos.y + (kZrand * kVelocityNoise);
     new_pose.yaw = previous.yaw + (kZrand * kYawNoise);
+    return new_pose;
 }
 
 Pose *MCLStep(vector<Pose> previous_predictions,
