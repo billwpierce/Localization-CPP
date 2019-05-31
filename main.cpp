@@ -1,4 +1,5 @@
 #include <math.h>
+#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <numeric>
 #include <tuple>
@@ -97,7 +98,9 @@ vector<Point> expected_targets(Pose pose) {
 }
 
 double RatePrediction(vector<Point> measured, Pose assessed_position) {
-    vector<Point> expected = expected_targets(assessed_position);
+    // vector<Point> expected = expected_targets(assessed_position);
+    // TODO: Add rate prediction
+    return 0.0;
 }
 
 Pose NewPoseWithNoise(Pose previous) {  // TODO: Implement dx to more
@@ -109,15 +112,15 @@ Pose NewPoseWithNoise(Pose previous) {  // TODO: Implement dx to more
     return new_pose;
 }
 
-Pose *MCLStep(vector<Pose> previous_predictions,
-              vector<Point> measured_targets) {
+vector<Pose> MCLStep(vector<Pose> previous_predictions,
+                     vector<Point> measured_targets) {
     // Compare predictions to measured
     double weights[kSamples];
     for (int i = 0; i < kSamples; i++) {
         weights[i] = RatePrediction(measured_targets, previous_predictions[i]);
     }
     // Generate Random predictions around probabilities
-    Pose new_predictions[kSamples];
+    vector<Pose> new_predictions;
     double weightsSum = accumulate(begin(weights), end(weights), 0.0);
     for (int i = 0; i < kSamples; i++) {
         float weight = weightsSum * kRand;
@@ -133,5 +136,74 @@ Pose *MCLStep(vector<Pose> previous_predictions,
 }
 
 int main() {
-    // TODO: Implement test cases
+    vector<Segment> full_segment_map;
+    for (int i = 0; i < segment_map.size(); i++) {
+        full_segment_map.push_back(segment_map[i]);
+        full_segment_map.push_back(
+            {{640 - segment_map[i].a.x, segment_map[i].a.y},
+             {640 - segment_map[i].b.x, segment_map[i].b.y}});
+        full_segment_map.push_back(
+            {{segment_map[i].a.x, 324 - segment_map[i].a.y},
+             {segment_map[i].b.x, 324 - segment_map[i].b.y}});
+        full_segment_map.push_back(
+            {{640 - segment_map[i].a.x, 324 - segment_map[i].a.y},
+             {640 - segment_map[i].b.x, 324 - segment_map[i].b.y}});
+    }
+    vector<Point> full_targets;
+    for (int i = 0; i < all_targets.size(); i++) {
+        full_targets.push_back(all_targets[i]);
+        full_targets.push_back({640 - all_targets[i].x, all_targets[i].y});
+        full_targets.push_back({all_targets[i].x, 324 - all_targets[i].y});
+        full_targets.push_back(
+            {640 - all_targets[i].x, 324 - all_targets[i].y});
+    }
+
+    sf::RenderWindow window(sf::VideoMode(648, 324, 32), "Localization");
+
+    vector<sf::Vertex> vertices;
+    for (int i = 0; i < full_segment_map.size(); i++) {
+        sf::Vertex point_a;
+        sf::Vertex point_b;
+        point_a.position =
+            sf::Vector2f(full_segment_map[i].a.x, full_segment_map[i].a.y);
+        point_b.position =
+            sf::Vector2f(full_segment_map[i].b.x, full_segment_map[i].b.y);
+        vertices.push_back(point_a);
+        vertices.push_back(point_b);
+    }
+
+    vector<sf::CircleShape> v_targets;
+    for (int i = 0; i < full_targets.size(); i++) {
+        sf::CircleShape circle;
+        circle.setRadius(1);
+        circle.setFillColor(sf::Color::Green);
+        circle.setOutlineThickness(0);
+        circle.setPosition(full_targets[i].x, full_targets[i].y);
+        v_targets.push_back(circle);
+    }
+
+    sf::RectangleShape rectangle;
+    rectangle.setSize(sf::Vector2f(30, 20));
+    rectangle.setOutlineColor(sf::Color::Red);
+    rectangle.setOutlineThickness(0);
+    rectangle.setPosition(10, 20);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+            window.clear(sf::Color::Black);
+            // cout << "\nSize: " << vertices.size();
+            window.draw(&vertices[0], vertices.size(), sf::Lines);
+            window.draw(rectangle);
+            for (int i = 0; i < v_targets.size(); i++) {
+                window.draw(v_targets[i]);
+            }
+            window.display();
+        }
+    }
+
+    return 0;
 }
