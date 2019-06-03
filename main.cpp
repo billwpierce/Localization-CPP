@@ -31,6 +31,8 @@ struct Segment {
     Point b;
 };
 
+// Defines all of the constants inherent to the map of the field, rather than
+// runtime.
 // TODO: Add the other four sections
 const Point tar_right_rocket_near = {213.57, 17.93};
 const Point tar_right_rocket_center = {228.28, 27.44};
@@ -54,6 +56,7 @@ const vector<Segment> segment_map = {
     seg_right_ship_side,   seg_right_ship_near,      seg_right_rocket_center,
     seg_right_rocket_near, seg_right_rocket_backing, seg_right_rocket_far};
 
+// Returns whether or not two segments intersect.
 bool Intersect(Segment line1, Segment line2) {
     // Segment Detection based on:
     // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-Intersect
@@ -74,6 +77,7 @@ bool Intersect(Segment line1, Segment line2) {
     return true;
 }
 
+// Returns the targets that are theoretically visible from a certain pose.
 vector<Point> ExpectedTargets(Pose pose) {
     vector<Point> visible_targets;
     for (int i = 0; i < all_targets.size(); i++) {
@@ -100,12 +104,15 @@ vector<Point> ExpectedTargets(Pose pose) {
     return expected_observations;
 }
 
+// Compares the measured target positions with a theoretical point, to produce a
+// likelihood weight that the robot is at that pose.
 double RatePrediction(vector<Point> measured, Pose assessed_position) {
     // vector<Point> expected = ExpectedTargets(assessed_position);
     // TODO: Add rate prediction
     return 0.0;
 }
 
+// Generates a new pose from an old pose, with a weight added in.
 Pose NewPoseWithNoise(Pose previous) {  // TODO: Implement dx to more
                                         // accurately predict new poses.
     Pose new_pose;
@@ -115,6 +122,8 @@ Pose NewPoseWithNoise(Pose previous) {  // TODO: Implement dx to more
     return new_pose;
 }
 
+// Master function that takes one stop in the monte carlo localization
+// algorithim
 vector<Pose> MCLStep(vector<Pose> previous_predictions,
                      vector<Point> measured_targets) {
     // Compare predictions to measured
