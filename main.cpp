@@ -5,13 +5,16 @@
 #include <tuple>
 #include <vector>
 
-#define kRand (static_cast<float>(rand()) / static_cast<float>(RAND_MAX))
-#define kZrand (kRand - 0.5)
-#define kVelocityNoise 1  // TODO: tune noise values
-#define kYawNoise 0.005
-#define kSamples 1000
-
 using namespace std;
+
+const double kVelocityNoise = 1;  // TODO: tune noise values
+const double kYawNoise = 0.005;
+const int kSamples = 1000;
+
+const float kRand() {
+    return (static_cast<float>(rand()) / static_cast<float>(RAND_MAX));
+}
+const float kZRand() { return (kRand() - 0.5); }
 
 struct Point {
     double x;
@@ -51,9 +54,9 @@ const vector<Segment> segment_map = {
     seg_right_ship_side,   seg_right_ship_near,      seg_right_rocket_center,
     seg_right_rocket_near, seg_right_rocket_backing, seg_right_rocket_far};
 
-bool intersect(Segment line1, Segment line2) {
+bool Intersect(Segment line1, Segment line2) {
     // Segment Detection based on:
-    // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect
+    // https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-Intersect
     double slope1 = (line1.a.y - line1.b.y) / (line1.a.x - line1.b.x);
     double slope2 = (line2.a.y - line2.b.y) / (line2.a.x - line2.b.x);
     double c1 = line1.a.y - slope1 * line1.a.x;
@@ -71,13 +74,13 @@ bool intersect(Segment line1, Segment line2) {
     return true;
 }
 
-vector<Point> expected_targets(Pose pose) {
+vector<Point> ExpectedTargets(Pose pose) {
     vector<Point> visible_targets;
     for (int i = 0; i < all_targets.size(); i++) {
         bool observable = true;
         Segment sight = {pose.pos, all_targets[i]};
         for (int j = 0; j < segment_map.size(); j++) {
-            if (intersect(sight, segment_map[i])) {
+            if (Intersect(sight, segment_map[i])) {
                 observable = false;
                 break;
             }
@@ -98,7 +101,7 @@ vector<Point> expected_targets(Pose pose) {
 }
 
 double RatePrediction(vector<Point> measured, Pose assessed_position) {
-    // vector<Point> expected = expected_targets(assessed_position);
+    // vector<Point> expected = ExpectedTargets(assessed_position);
     // TODO: Add rate prediction
     return 0.0;
 }
@@ -106,9 +109,9 @@ double RatePrediction(vector<Point> measured, Pose assessed_position) {
 Pose NewPoseWithNoise(Pose previous) {  // TODO: Implement dx to more
                                         // accurately predict new poses.
     Pose new_pose;
-    new_pose.pos.x = previous.pos.x + (kZrand * kVelocityNoise);
-    new_pose.pos.y = previous.pos.y + (kZrand * kVelocityNoise);
-    new_pose.yaw = previous.yaw + (kZrand * kYawNoise);
+    new_pose.pos.x = previous.pos.x + (kZRand() * kVelocityNoise);
+    new_pose.pos.y = previous.pos.y + (kZRand() * kVelocityNoise);
+    new_pose.yaw = previous.yaw + (kZRand() * kYawNoise);
     return new_pose;
 }
 
@@ -121,9 +124,9 @@ vector<Pose> MCLStep(vector<Pose> previous_predictions,
     }
     // Generate Random predictions around probabilities
     vector<Pose> new_predictions;
-    double weightsSum = accumulate(begin(weights), end(weights), 0.0);
+    double weights_sum = accumulate(begin(weights), end(weights), 0.0);
     for (int i = 0; i < kSamples; i++) {
-        float weight = weightsSum * kRand;
+        float weight = weights_sum * kRand();
         for (int j = 0; j < kSamples; j++) {
             weight -= weights[j];
             if (weight <= 0) {
@@ -172,14 +175,14 @@ int main() {
         vertices.push_back(point_b);
     }
 
-    vector<sf::CircleShape> v_targets;
+    vector<sf::CircleShape> visualized_targets;
     for (int i = 0; i < full_targets.size(); i++) {
         sf::CircleShape circle;
         circle.setRadius(1);
         circle.setFillColor(sf::Color::Green);
         circle.setOutlineThickness(0);
         circle.setPosition(full_targets[i].x, full_targets[i].y);
-        v_targets.push_back(circle);
+        visualized_targets.push_back(circle);
     }
 
     sf::RectangleShape rectangle;
@@ -198,8 +201,8 @@ int main() {
             // cout << "\nSize: " << vertices.size();
             window.draw(&vertices[0], vertices.size(), sf::Lines);
             window.draw(rectangle);
-            for (int i = 0; i < v_targets.size(); i++) {
-                window.draw(v_targets[i]);
+            for (int i = 0; i < visualized_targets.size(); i++) {
+                window.draw(visualized_targets[i]);
             }
             window.display();
         }
